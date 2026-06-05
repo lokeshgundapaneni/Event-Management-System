@@ -25,4 +25,16 @@ public class GlobalExceptionHandler {
 	{
 		return new ResponseEntity<>(ex.getMessage(),HttpStatus.NOT_FOUND);
 	}
+	
+	@ExceptionHandler
+	public ResponseEntity<String> handleBookingNotFoundException(BookingNotFoundException ex)
+	{
+		return new ResponseEntity<>(ex.getMessage(),HttpStatus.NOT_FOUND);
+	}
+	
+	@ExceptionHandler
+	public ResponseEntity<String> handleInsufficientSeatsException(InsufficientSeatsException ex)
+	{
+		return new ResponseEntity<>(ex.getMessage(),HttpStatus.BAD_REQUEST);
+	}
 }

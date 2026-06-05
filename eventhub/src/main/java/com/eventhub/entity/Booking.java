@@ -3,6 +3,7 @@ package com.eventhub.entity;
 import java.time.LocalDateTime;
 
 import com.eventhub.enums.BookingStatus;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,6 +14,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
@@ -33,8 +35,6 @@ public class Booking {
 	@Column(nullable=false)
 	private Double totalAmount;
 	
-	@NotNull(message="Created date is required")
-	@PastOrPresent(message="Created date cannot be in the future")
 	private LocalDateTime bookingDate;
 	
 	@Enumerated(EnumType.STRING)
@@ -43,10 +43,12 @@ public class Booking {
 	
 	@ManyToOne
 	@JoinColumn(name="user_id")
+	@JsonBackReference("user-booking")
 	private User user;
 	
 	@ManyToOne
 	@JoinColumn(name="event_id")
+	@JsonBackReference("event-booking")
 	private Event event;
 
 	public Booking(Long id, @Min(value = 1, message = "minimum one ticket required") Integer ticketsCount,
@@ -123,6 +125,11 @@ public class Booking {
 		this.event = event;
 	}
 	
+	
+	@PrePersist
+	public void prePersist() {
+	    bookingDate = LocalDateTime.now();
+	}
 	
 	
 	@Override

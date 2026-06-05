@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.eventhub.enums.Role;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -39,23 +41,24 @@ public class User {
 	
 	@NotBlank(message = "Password is required")
 	@Size(min=6,message="Password must be at least 6 characters")
+	@JsonIgnore
 	private String password;
 	
 	@Enumerated(EnumType.STRING)
 	@Column(nullable=false)
 	private Role role;
 	
-	@NotNull(message="Created date is required")
-	@PastOrPresent(message="Created date cannot be in the future")
 	private LocalDateTime createdAt;
 	
 	@OneToMany(mappedBy="organizer")
+	@JsonManagedReference("user-event")
 	private List<Event> events;
 	
 	@OneToMany(mappedBy="user")
+	@JsonManagedReference("user-booking")
 	private List<Booking> bookings;
 
-	public User(long id, @NotBlank(message = "Category name is required") @Pattern(regexp = "^[A-Za-Z ]+$") String name,
+	public User(Long id, @NotBlank(message = "Category name is required") @Pattern(regexp = "^[A-Za-Z ]+$") String name,
 			@Email(message = "enter the valid email") String email,
 			@NotBlank(message = "password is required") String password, Role role,
 			@NotNull(message = "Created date is required") @PastOrPresent(message = "Created date cannot be in the future") LocalDateTime createdAt,
@@ -75,11 +78,11 @@ public class User {
 		super();
 	}
 
-	public long getId() {
+	public Long getId() {
 		return id;
 	}
 
-	public void setId(long id) {
+	public void setId(Long id) {
 		this.id = id;
 	}
 

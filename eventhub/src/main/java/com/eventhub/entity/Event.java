@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.eventhub.enums.EventStatus;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -72,14 +74,17 @@ public class Event {
 	private LocalDateTime createdAt;
 	
 	@ManyToOne
-	@JoinColumn(name="organizer")
+	@JoinColumn(name="organizer_id")
+	@JsonBackReference("user-event")
 	private User organizer;
 	
 	@ManyToOne
 	@JoinColumn(name="category_id")
+	@JsonBackReference("category-event")
 	private Category category; 
 	
 	@OneToMany(mappedBy="event")
+	@JsonManagedReference("event-booking")
 	private List<Booking> bookings;
 	
 	public Event() {

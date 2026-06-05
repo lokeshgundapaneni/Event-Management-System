@@ -2,6 +2,8 @@ package com.eventhub.entity;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -26,6 +28,7 @@ public class Category {
 	@NotBlank(message="Description is required")
 	private String description;
 
+	@JsonManagedReference("category-event")
 	@OneToMany(mappedBy = "category")
     private List<Event> events;
 
