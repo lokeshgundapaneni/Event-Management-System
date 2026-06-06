@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.eventhub.dto.request.CategoryRequest;
+import com.eventhub.dto.response.CategoryResponse;
 import com.eventhub.entity.Category;
 import com.eventhub.exception.CategoryNotFoundException;
 import com.eventhub.repository.CategoryRepository;
@@ -18,36 +19,49 @@ public class CategoryService {
 	    this.repo = repo;
 	}
 	
+	
+	public CategoryResponse mapToResponse(Category category)
+	{
+		return new CategoryResponse(
+				category.getId(),category.getName(),category.getDescription());
+	}
+	
 //	creating the category
-	public Category createCategory(CategoryRequest request)
+	public CategoryResponse createCategory(CategoryRequest request)
 	{
 		Category cat=new Category();
 		cat.setName(request.getName());
 		cat.setDescription(request.getDescription());
-		return repo.save(cat);
+		Category savedCategory= repo.save(cat);
+		return mapToResponse(savedCategory);
 	}
 	
 //	get all the categories
-	public List<Category> getAllCategories()
+	public List<CategoryResponse> getAllCategories()
 	{
-		return repo.findAll();
+		return repo.findAll()
+	               .stream()
+	               .map(this::mapToResponse)
+	               .toList();
 	}
 	
 //	get category by id
-	public Category getCategoryById(Long id)
+	public CategoryResponse getCategoryById(Long id)
 	{
-		return repo.findById(id).orElseThrow(()->
+		Category cat= repo.findById(id).orElseThrow(()->
 									new CategoryNotFoundException("Category not found with id : " + id));
+		return mapToResponse(cat);
 	}
 	
 //	update category
-	public Category updateCategory(Long id,CategoryRequest request)
+	public CategoryResponse updateCategory(Long id,CategoryRequest request)
 	{
 		Category cat = repo.findById(id).orElseThrow(()->
 									new CategoryNotFoundException("Category not found with id : " + id));
 		cat.setName(request.getName());
 		cat.setDescription(request.getDescription());
-		return repo.save(cat);
+		Category updatedCategory = repo.save(cat);
+		return mapToResponse(updatedCategory);
 	}
 	
 //	delete category

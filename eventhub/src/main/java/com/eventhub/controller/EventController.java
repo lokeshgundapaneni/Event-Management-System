@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.eventhub.dto.request.EventRequest;
-import com.eventhub.entity.Event;
+import com.eventhub.dto.response.EventResponse;
 import com.eventhub.service.EventService;
 
 import jakarta.validation.Valid;
@@ -29,27 +29,27 @@ public class EventController {
 	}
 	
 	@PostMapping
-	public Event createEvent(@Valid @RequestBody EventRequest request)
+	public EventResponse createEvent(@Valid @RequestBody EventRequest request)
 	{
 		return eventService.createEvent(request);
 	}
 	
 	@GetMapping
-	public List<Event> getAllEvents()
+	public List<EventResponse> getAllEvents()
 	{
 		return eventService.getAllEvents();
 	}
 	
 	@GetMapping("/{id}")
-	public Event getEventById(@PathVariable Long id)
+	public EventResponse getEventById(@PathVariable Long id)
 	{
 		return eventService.getEventById(id);
 	}
 	
 	@PutMapping("/{id}")
-	public Event updateEvent(@PathVariable Long id,@Valid @RequestBody EventRequest request)
+	public EventResponse updateEvent(@PathVariable Long id,@Valid @RequestBody EventRequest request)
 	{
-		return eventService.updateEvent(id, request);
+		return eventService.updateEvent(id,request);
 	}
 	
 	@DeleteMapping("/{id}")

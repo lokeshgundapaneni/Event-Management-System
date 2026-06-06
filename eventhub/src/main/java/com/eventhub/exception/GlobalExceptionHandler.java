@@ -1,39 +1,59 @@
 package com.eventhub.exception;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-	@ExceptionHandler
+	@ExceptionHandler(CategoryNotFoundException.class)
 	public ResponseEntity<String> handleCategoryNotFoundException(CategoryNotFoundException ex)
 	{
 		return new ResponseEntity<>(ex.getMessage(),HttpStatus.NOT_FOUND);
 	}
 	
-	@ExceptionHandler
+	@ExceptionHandler(UserNotFoundException.class)
 	public ResponseEntity<String> handleUserNotFoundException(UserNotFoundException ex)
 	{
 		return new ResponseEntity<>(ex.getMessage(),HttpStatus.NOT_FOUND);
 	}
 	
-	@ExceptionHandler
+	@ExceptionHandler(EventNotFoundException.class)
 	public ResponseEntity<String> handleEventNotFoundException(EventNotFoundException ex)
 	{
 		return new ResponseEntity<>(ex.getMessage(),HttpStatus.NOT_FOUND);
 	}
 	
-	@ExceptionHandler
+	@ExceptionHandler(BookingNotFoundException.class)
 	public ResponseEntity<String> handleBookingNotFoundException(BookingNotFoundException ex)
 	{
 		return new ResponseEntity<>(ex.getMessage(),HttpStatus.NOT_FOUND);
 	}
 	
-	@ExceptionHandler
+	@ExceptionHandler(InsufficientSeatsException.class)
 	public ResponseEntity<String> handleInsufficientSeatsException(InsufficientSeatsException ex)
+	{
+		return new ResponseEntity<>(ex.getMessage(),HttpStatus.BAD_REQUEST);
+	}
+	
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<Map<String,String>>handleValidationExceptions(MethodArgumentNotValidException ex)
+	{
+	    Map<String,String> errors=new HashMap<>();
+	    ex.getBindingResult()
+	      .getFieldErrors()
+	      .forEach(error->errors.put(error.getField(),error.getDefaultMessage()));
+	    return new ResponseEntity<>(errors,HttpStatus.BAD_REQUEST);
+	}
+	
+	@ExceptionHandler(UsernameNotFoundException.class)
+	public ResponseEntity<String> handleUsernameNotFoundException(UsernameNotFoundException ex)
 	{
 		return new ResponseEntity<>(ex.getMessage(),HttpStatus.BAD_REQUEST);
 	}

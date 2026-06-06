@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.eventhub.dto.request.BookingRequest;
-import com.eventhub.entity.Booking;
+import com.eventhub.dto.response.BookingResponse;
 import com.eventhub.service.BookingService;
 
 import jakarta.validation.Valid;
@@ -27,26 +27,32 @@ public class BookingController {
 		this.bookingService=bookingService;
 	}
 	
-	@PostMapping("/{userId}")
-	public Booking createBooking(@PathVariable Long userId,@Valid @RequestBody BookingRequest request)
+	@PostMapping
+	public BookingResponse createBooking(@Valid @RequestBody BookingRequest request)
 	{
-		return bookingService.createBooking(userId,request);
+		return bookingService.createBooking(request);
 	}
 	
 	@GetMapping
-	public List<Booking> getAllBookings()
+	public List<BookingResponse> getMyBookings()
+	{
+	    return bookingService.getMyBookings();
+	}
+	
+	@GetMapping("/all")
+	public List<BookingResponse> getAllBookings()
 	{
 		return bookingService.getAllBookings();
 	}
 	
 	@GetMapping("/{id}")
-	public Booking getBookingById(@PathVariable Long id)
+	public BookingResponse getBookingById(@PathVariable Long id)
 	{
 		return bookingService.getBookingById(id);
 	}
 	
 	@PutMapping("/{id}")
-	public Booking cancelBooking(@PathVariable Long id)
+	public BookingResponse cancelBooking(@PathVariable Long id)
 	{
 		return bookingService.cancelBooking(id);
 	}

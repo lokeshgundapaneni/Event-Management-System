@@ -2,9 +2,11 @@ package com.eventhub.service;
 
 import java.util.List;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.eventhub.dto.request.RegisterRequest;
+import com.eventhub.dto.response.UserResponse;
 import com.eventhub.entity.User;
 import com.eventhub.enums.Role;
 import com.eventhub.exception.UserNotFoundException;
@@ -14,45 +16,58 @@ import com.eventhub.repository.UserRepository;
 public class UserService {
 
 	private final UserRepository repo;
+	private final PasswordEncoder passwordEncoder;
 	
-	public UserService(UserRepository repo)
+	public UserService(UserRepository repo,PasswordEncoder passwordEncoder)
 	{
 		this.repo=repo;
+		this.passwordEncoder=passwordEncoder;
+	}
+	
+	public UserResponse mapToResponse(User user)
+	{
+		return new UserResponse(user.getId(),user.getName(),user.getEmail(),user.getRole());
 	}
 	
 //	create the user
-	public User createUser(RegisterRequest request)
+	public UserResponse createUser(RegisterRequest request)
 	{
 		User user=new User();
 		user.setName(request.getName());
 		user.setEmail(request.getEmail());
-		user.setPassword(request.getPassword());
+		user.setPassword(passwordEncoder.encode(request.getPassword()));
 		user.setRole(Role.USER);
-		return repo.save(user);
+		User savedUser=repo.save(user);
+		return mapToResponse(savedUser);
 	}
 	
 //	get all the users 
-	public List<User> getAllUsers()
+	public List<UserResponse> getAllUsers()
 	{
-		return repo.findAll();
+		return repo.findAll()
+				.stream()
+				.map(this::mapToResponse)
+				.toList();
 	}
 	
 //	get user by id
-	public User getUserById(Long id)
+	public UserResponse getUserById(Long id)
 	{
-		return repo.findById(id).orElseThrow(()->
+		User user=repo.findById(id).orElseThrow(()->
 									new UserNotFoundException("User not found with id : "+id));
+		return mapToResponse(user);
 	}
 	
 //	update User By Id
-	public User updateUser(Long id,RegisterRequest request)
+	public UserResponse updateUser(Long id,RegisterRequest request)
 	{
 		User user = repo.findById(id).orElseThrow(()->
 									new UserNotFoundException("User not found with id : "+id));
 		user.setName(request.getName());
 		user.setEmail(request.getEmail());
 		user.setPassword(request.getPassword());
-		return repo.save(user);
+		User updatedUser=repo.save(user);
+		return mapToResponse(updatedUser);
 	}
 	
 //	delete the user

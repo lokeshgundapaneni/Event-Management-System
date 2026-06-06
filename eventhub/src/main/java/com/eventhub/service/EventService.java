@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.eventhub.dto.request.EventRequest;
+import com.eventhub.dto.response.EventResponse;
 import com.eventhub.entity.Category;
 import com.eventhub.entity.Event;
 import com.eventhub.entity.User;
@@ -32,8 +33,16 @@ public class EventService {
 		this.eventRepository=eventRepository;
 	}
 	
+	
+//	mapToResponse method
+	public EventResponse mapToResponse(Event event)
+	{
+		return new EventResponse(event.getId(),event.getTitle(),event.getVenue(),event.getEventDate(),
+							event.getTicketPrice(),event.getAvailableSeats(),event.getStatus());
+	}
+	
 //	create an event
-	public Event createEvent(EventRequest request)
+	public EventResponse createEvent(EventRequest request)
 	{
 		Category category = categoryRepositoy.findById(request.getCategoryId()).orElseThrow(()->
 									new CategoryNotFoundException("Category not found with id : " +request.getCategoryId()));
@@ -54,25 +63,29 @@ public class EventService {
 		event.setCategory(category);
 		event.setOrganizer(organizer);
 		
-		return eventRepository.save(event);
+		Event savedEvent=eventRepository.save(event);
+		return mapToResponse(savedEvent);
 	}
 	
 //	fetch all the entities
-	public List<Event> getAllEvents()
+	public List<EventResponse> getAllEvents()
 	{
-		return eventRepository.findAll();
+		return eventRepository.findAll()
+				.stream()
+				.map(this::mapToResponse)
+				.toList();
 	}
 	
 //	fetch by id
-	public Event getEventById(Long id)
+	public EventResponse getEventById(Long id)
 	{
 		Event event = eventRepository.findById(id).orElseThrow(()->
 												new EventNotFoundException("Event Not Found with Id : "+id));
-		return event;
+		return mapToResponse(event);
 	}
 	
 //	public update the Event
-	public Event updateEvent(Long id,EventRequest request)
+	public EventResponse updateEvent(Long id,EventRequest request)
 	{
 		Event event = eventRepository.findById(id).orElseThrow(()->
 										new EventNotFoundException("Event Not Found with Id : "+id));
@@ -95,7 +108,8 @@ public class EventService {
 		event.setCategory(category);
 		event.setOrganizer(organizer);
 		
-		return eventRepository.save(event);
+		 Event updatedEvent=eventRepository.save(event);
+		 return mapToResponse(updatedEvent);
 	}
 	
 	
