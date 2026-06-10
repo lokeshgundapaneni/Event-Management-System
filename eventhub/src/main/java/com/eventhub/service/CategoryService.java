@@ -23,7 +23,7 @@ public class CategoryService {
 	public CategoryResponse mapToResponse(Category category)
 	{
 		return new CategoryResponse(
-				category.getId(),category.getName(),category.getDescription());
+				category.getId(),category.getName(),category.getDescription(),category.getIcon());
 	}
 	
 //	creating the category
@@ -32,6 +32,7 @@ public class CategoryService {
 		Category cat=new Category();
 		cat.setName(request.getName());
 		cat.setDescription(request.getDescription());
+		cat.setIcon(request.getIcon());
 		Category savedCategory= repo.save(cat);
 		return mapToResponse(savedCategory);
 	}
@@ -60,6 +61,7 @@ public class CategoryService {
 									new CategoryNotFoundException("Category not found with id : " + id));
 		cat.setName(request.getName());
 		cat.setDescription(request.getDescription());
+		cat.setIcon(request.getIcon());
 		Category updatedCategory = repo.save(cat);
 		return mapToResponse(updatedCategory);
 	}

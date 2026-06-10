@@ -41,6 +41,10 @@ public class Booking {
 	@Column(nullable=false)
 	private BookingStatus status;
 	
+
+	@Column(name = "razorpay_order_id", unique = true)
+	private String razorpayOrderId;
+	
 	@ManyToOne
 	@JoinColumn(name="user_id")
 	@JsonBackReference("user-booking")
@@ -51,16 +55,18 @@ public class Booking {
 	@JsonBackReference("event-booking")
 	private Event event;
 
+	
+
 	public Booking(Long id, @Min(value = 1, message = "minimum one ticket required") Integer ticketsCount,
-			@Positive Double totalAmount,
-			@NotNull(message = "Created date is required") @PastOrPresent(message = "Created date cannot be in the future") LocalDateTime bookingDate,
-			BookingStatus status, User user, Event event) {
+			@Positive Double totalAmount, LocalDateTime bookingDate, BookingStatus status, String razorpayOrderId,
+			User user, Event event) {
 		super();
 		this.id = id;
 		this.ticketsCount = ticketsCount;
 		this.totalAmount = totalAmount;
 		this.bookingDate = bookingDate;
 		this.status = status;
+		this.razorpayOrderId = razorpayOrderId;
 		this.user = user;
 		this.event = event;
 	}
@@ -126,21 +132,29 @@ public class Booking {
 	}
 	
 	
+	public String getRazorpayOrderId() {
+	    return razorpayOrderId;
+	}
+
+	public void setRazorpayOrderId(String razorpayOrderId) {
+	    this.razorpayOrderId = razorpayOrderId;
+	}
+	
+	
 	@PrePersist
 	public void prePersist() {
 	    bookingDate = LocalDateTime.now();
 	}
-	
-	
+
 	@Override
 	public String toString() {
-	    return "Booking [id=" + id +
-	            ", ticketsCount=" + ticketsCount +
-	            ", totalAmount=" + totalAmount +
-	            ", bookingDate=" + bookingDate +
-	            ", status=" + status +
-	            "]";
+		return "Booking [id=" + id + ", ticketsCount=" + ticketsCount + ", totalAmount=" + totalAmount
+				+ ", bookingDate=" + bookingDate + ", status=" + status + ", razorpayOrderId=" + razorpayOrderId
+				+ ", user=" + user + ", event=" + event + "]";
 	}
+	
+	
+	
 	
 	
 }

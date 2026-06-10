@@ -1,7 +1,12 @@
 package com.eventhub.controller;
 
+import java.util.Map;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,15 +41,27 @@ public class AuthController {
 	}
 	
 	@PostMapping("/login")
-	public AuthResponse login(@RequestBody LoginRequest request)
+	public ResponseEntity<?> login(@RequestBody LoginRequest request)
 	{
-		 authenticationManager.authenticate(
-				new UsernamePasswordAuthenticationToken(request.getEmail(),request.getPassword()));
-		 
-		 User user = userRepository.findByEmail(request.getEmail()).orElseThrow(()->new RuntimeException("User not found"));
-		 
-		 String token=jwtUtil.generateToken(request.getEmail(),user.getRole().name());
-		 return new AuthResponse(token);
+		try {
+	        authenticationManager.authenticate(
+	            new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+	        );
+	        
+	        User user = userRepository.findByEmail(request.getEmail())
+	                .orElseThrow(() -> new RuntimeException("User not found"));
+	        
+	        String token = jwtUtil.generateToken(request.getEmail(), user.getRole().name());
+	        UserResponse userRes = new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole());
+	        return ResponseEntity.ok(new AuthResponse(token, userRes));
+	        
+	    } catch (AuthenticationException e) {
+	        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+	                .body(Map.of("error", "Invalid email or password structure."));
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(Map.of("error", e.getMessage()));
+	    }
 	}
 	
 	@PostMapping("/register")

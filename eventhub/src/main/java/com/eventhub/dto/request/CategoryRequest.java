@@ -7,7 +7,7 @@ public class CategoryRequest {
 
     @NotBlank(message = "Category name is required")
     @Pattern(
-            regexp = "^[A-Za-z ]+$",
+            regexp = "^[A-Za-z& ]+$",
             message = "Category name should contain only letters"
     )
     private String name;
@@ -15,12 +15,18 @@ public class CategoryRequest {
     @NotBlank(message = "Description is required")
     private String description;
 
+    // Added icon field to the request payload
+    @NotBlank(message = "Icon identifier is required")
+    private String icon;
+
     public CategoryRequest() {
     }
 
-    public CategoryRequest(String name, String description) {
+    // Updated constructor
+    public CategoryRequest(String name, String description, String icon) {
         this.name = name;
         this.description = description;
+        this.icon = icon;
     }
 
     public String getName() {
@@ -31,11 +37,20 @@ public class CategoryRequest {
         this.name = name;
     }
 
-	public String getDescription() {
-		return description;
-	}
+    public String getDescription() {
+        return description;
+    }
 
-	public void setDescription(String description) {
-		this.description = description;
-	}
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    // Getter and Setter for Icon
+    public String getIcon() {
+        return icon;
+    }
+
+    public void setIcon(String icon) {
+        this.icon = icon;
+    }
 }

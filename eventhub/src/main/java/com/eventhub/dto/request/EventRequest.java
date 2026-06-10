@@ -6,11 +6,12 @@ import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 
 public class EventRequest {
 
-    @NotBlank(message = "Title is required")
-    private String title;
+	@Size(min = 3, max = 100, message = "Title must be between 3 and 100 characters")
+	private String title;
 
     @NotBlank(message = "Description is required")
     private String description;
@@ -35,8 +36,6 @@ public class EventRequest {
     @NotNull(message = "Category id is required")
     private Long categoryId;
 
-    @NotNull(message = "Organizer id is required")
-    private Long organizerId;
 
     public EventRequest() {
     }
@@ -49,8 +48,8 @@ public class EventRequest {
 			@Future(message = "Event date must be in future") @NotNull(message = "Event date is required") LocalDate eventDate,
 			@Positive(message = "Ticket price must be positive") Double ticketPrice,
 			@Positive(message = "Available seats must be positive") Integer availableSeats, String imageUrl,
-			@NotNull(message = "Category id is required") Long categoryId,
-			@NotNull(message = "Organizer id is required") Long organizerId) {
+			@NotNull(message = "Category id is required") Long categoryId
+		) {
 		super();
 		this.title = title;
 		this.description = description;
@@ -60,7 +59,7 @@ public class EventRequest {
 		this.availableSeats = availableSeats;
 		this.imageUrl = imageUrl;
 		this.categoryId = categoryId;
-		this.organizerId = organizerId;
+		
 	}
 
 
@@ -120,14 +119,6 @@ public class EventRequest {
     public void setCategoryId(Long categoryId) {
         this.categoryId = categoryId;
     }
-
-	public Long getOrganizerId() {
-		return organizerId;
-	}
-
-	public void setOrganizerId(Long organizerId) {
-		this.organizerId = organizerId;
-	}
 	
 	public String getImageUrl() {
 		return imageUrl;

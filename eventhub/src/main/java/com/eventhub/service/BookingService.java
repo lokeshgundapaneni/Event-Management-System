@@ -1,7 +1,10 @@
 package com.eventhub.service;
 
 import java.util.List;
+import java.util.Map;
 
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -19,9 +22,18 @@ import com.eventhub.exception.UserNotFoundException;
 import com.eventhub.repository.BookingRepository;
 import com.eventhub.repository.EventRepository;
 import com.eventhub.repository.UserRepository;
+import com.razorpay.Order;
+import com.razorpay.RazorpayClient;
+import com.razorpay.Utils;
 
 @Service
 public class BookingService {
+
+	@Value("${razorpay.key.id}")
+	private String razorpayKeyId;
+
+	@Value("${razorpay.key.secret}")
+	private String razorpayKeySecret;
 
 	private final UserRepository userRepository;
 	private final EventRepository eventRepository;
@@ -36,28 +48,36 @@ public class BookingService {
 		this.eventRepository=eventRepository;
 	}
 	
-	
 	public BookingResponse mapToResponse(Booking booking)
 	{
-		return new BookingResponse(booking.getId(),booking.getTicketsCount(),booking.getTotalAmount(),
-							booking.getBookingDate(),booking.getStatus());
+		Event event = booking.getEvent();
+
+		return new BookingResponse(
+				booking.getId(),
+				event.getId(),
+				event.getTitle(),
+				event.getVenue(),
+				event.getEventDate(),
+				booking.getTicketsCount(),
+				event.getTicketPrice(),
+				booking.getTotalAmount(),
+				booking.getRazorpayOrderId(),
+				booking.getBookingDate(),
+				booking.getStatus()
+		);
 	}
 	
-	
-//	create the booking
 	public BookingResponse createBooking(BookingRequest request)
 	{
-		
 		Authentication authentication = SecurityContextHolder
-                								.getContext()
-                								.getAuthentication();
+												.getContext()
+												.getAuthentication();
 		
 		String email=authentication.getName();
 		
-//		check wheather the user exist or not 
 		User user = userRepository.findByEmail(email).orElseThrow(()->
 										new UserNotFoundException("User not found"));
-//		check wheather the event exist or not 
+
 		Event event=eventRepository.findById(request.getEventId()).orElseThrow(()->
 										new EventNotFoundException("Event not found with id : "+request.getEventId()));
 		
@@ -67,19 +87,75 @@ public class BookingService {
 		}
 		
 		double totalAmount=event.getTicketPrice()*request.getTicketsCount();
-		event.setRemainingSeats(event.getRemainingSeats()-request.getTicketsCount());
-		eventRepository.save(event);
+		String generatedRazorpayOrderId = null;
+
+		try {
+			RazorpayClient razorpay = new RazorpayClient(razorpayKeyId, razorpayKeySecret);
+
+			JSONObject orderRequest = new JSONObject();
+			orderRequest.put("amount", (int) (totalAmount * 100)); 
+			orderRequest.put("currency", "INR");
+			orderRequest.put("receipt", "rec_booking_" + System.currentTimeMillis());
+
+			Order order = razorpay.orders.create(orderRequest);
+			generatedRazorpayOrderId = order.get("id");
+
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to initialize transaction with Razorpay Gateway: " + e.getMessage());
+		}
+
 		Booking booking=new Booking();
 		booking.setEvent(event);
 		booking.setUser(user);
 		booking.setTicketsCount(request.getTicketsCount());
 		booking.setTotalAmount(totalAmount);
-		booking.setStatus(BookingStatus.CONFIRMED);
+		booking.setRazorpayOrderId(generatedRazorpayOrderId);
+		booking.setStatus(BookingStatus.PENDING);
+		
 		Booking savedBooking=bookingRepository.save(booking);
 		return mapToResponse(savedBooking);
 	}
 	
-//	get all bookings
+	public BookingResponse verifyPayment(Map<String, String> paymentData) {
+		// Match the exact keys sent from your frontend verificationPayload object!
+		String razorpayOrderId = paymentData.get("razorpayOrderId");
+		String razorpayPaymentId = paymentData.get("razorpayPaymentId");
+		String razorpaySignature = paymentData.get("razorpaySignature");
+
+		boolean isValidSignature = false;
+		try {
+			JSONObject options = new JSONObject();
+			// Razorpay's internal SDK math helper utility requires these exact snake_case strings
+			options.put("razorpay_order_id", razorpayOrderId);
+			options.put("razorpay_payment_id", razorpayPaymentId);
+			options.put("razorpay_signature", razorpaySignature);
+
+			isValidSignature = Utils.verifyPaymentSignature(options, razorpayKeySecret);
+		} catch (Exception e) {
+			throw new RuntimeException("Signature verification computation process failed");
+		}
+
+		if (!isValidSignature) {
+			throw new RuntimeException("Invalid payment signature payload window detected!");
+		}
+
+		Booking booking = bookingRepository.findByRazorpayOrderId(razorpayOrderId)
+				.orElseThrow(() -> new BookingNotFoundException("No order matching reference identifier " + razorpayOrderId));
+
+		Event event = booking.getEvent();
+		if (event.getRemainingSeats() < booking.getTicketsCount()) {
+			throw new InsufficientSeatsException("Seats became unavailable during the payment checkout window.");
+		}
+
+		event.setRemainingSeats(event.getRemainingSeats() - booking.getTicketsCount());
+		eventRepository.save(event);
+
+		booking.setStatus(BookingStatus.CONFIRMED);
+		Booking updatedBooking = bookingRepository.save(booking);
+
+		return mapToResponse(updatedBooking);
+	}
+	
 	public List<BookingResponse> getAllBookings()
 	{
 		return bookingRepository.findAll()
@@ -88,7 +164,6 @@ public class BookingService {
 				.toList();
 	}
 	
-//	get bookings by id
 	public BookingResponse getBookingById(Long id)
 	{
 		Booking booking= bookingRepository.findById(id).orElseThrow(()->
@@ -96,13 +171,11 @@ public class BookingService {
 		return mapToResponse(booking);
 	}
 	
-//	cancel the booking
 	public BookingResponse cancelBooking(Long id)
 	{
-		
 		Authentication authentication=SecurityContextHolder
-		                						.getContext()
-		                						.getAuthentication();
+												.getContext()
+												.getAuthentication();
 		String email=authentication.getName();
 		Booking booking=bookingRepository.findById(id).orElseThrow(()->
 											new BookingNotFoundException("Booking not found with id : "+id));
@@ -110,8 +183,8 @@ public class BookingService {
 		if(!booking.getUser().getEmail().equals(email))
 		{
 			throw new RuntimeException(
-		            "You cannot cancel another user's booking"
-		    );
+					"You cannot cancel another user's booking"
+			);
 		}
 		
 		if(booking.getStatus()==BookingStatus.CANCELLED)
@@ -127,22 +200,19 @@ public class BookingService {
 		return mapToResponse(cancelledBooking);
 	}
 	
-//	find booking by user
 	public List<BookingResponse> getMyBookings()
 	{
-	    Authentication authentication =
-	            SecurityContextHolder
-	                    .getContext()
-	                    .getAuthentication();
-	    
-	    String email=authentication.getName();
-	    
-	    return bookingRepository
-	            .findByUserEmail(email)
-	            .stream()
-	            .map(this::mapToResponse)
-	            .toList();
+		Authentication authentication =
+				SecurityContextHolder
+						.getContext()
+						.getAuthentication();
+		
+		String email=authentication.getName();
+		
+		return bookingRepository
+				.findByUserEmail(email)
+				.stream()
+				.map(this::mapToResponse)
+				.toList();
 	}
-	
-	
 }
